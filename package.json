@@ -15,7 +15,6 @@
     "api:start": "npm run start --workspace @drainguard/api",
     "api:test": "npm run test --workspace @drainguard/api",
     "api:test:watch": "npm run test:watch --workspace @drainguard/api",
-    "api:lint": "npm run lint --workspace @drainguard/api",
     "api:typecheck": "npm run typecheck --workspace @drainguard/api",
     "db:generate": "npm run db:generate --workspace @drainguard/api",
     "db:migrate": "npm run db:migrate --workspace @drainguard/api",

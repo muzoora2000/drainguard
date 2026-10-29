@@ -1,0 +1,17 @@
+export const publicDeviceSelect = {
+  id: true,
+  drainId: true,
+  name: true,
+  serialNumber: true,
+  type: true,
+  apiKeyPrefix: true,
+  healthStatus: true,
+  healthReason: true,
+  healthUpdatedAt: true,
+  lastSeenAt: true,
+  lastReadingAt: true,
+  batteryPercent: true,
+  firmwareVersion: true,
+  createdAt: true,
+  updatedAt: true,
+} as const;
