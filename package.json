@@ -24,6 +24,8 @@
     "db:studio": "npm run db:studio --workspace @drainguard/api",
     "web:dev": "npm run dev --workspace @drainguard/web",
     "web:build": "npm run build --workspace @drainguard/web",
+    "web:typecheck": "npm run typecheck --workspace @drainguard/web",
+    "web:test": "npm run test --workspace @drainguard/web",
     "sim": "npm exec --workspace @drainguard/simulator -- tsx src/index.ts",
     "sim:list": "npm run list --workspace @drainguard/simulator",
     "sim:typecheck": "npm run typecheck --workspace @drainguard/simulator",

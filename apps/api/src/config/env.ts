@@ -3,6 +3,7 @@ import { z } from 'zod';
 
 const booleanString = z
   .enum(['true', 'false'])
+  .default('true')
   .transform((value) => value === 'true');
 
 const intFromEnv = (fallback: number, min: number, max: number) =>
@@ -48,7 +49,7 @@ const envSchema = z
     RULE_SWEEP_CRON: z.string().default('* * * * *'),
     NOTIFICATION_RETRY_CRON: z.string().default('* * * * *'),
     ESCALATION_CRON: z.string().default('* * * * *'),
-    JOBS_ENABLED: booleanString.default('true'),
+    JOBS_ENABLED: booleanString,
 
     PUBLIC_API_URL: z.string().url().default('http://localhost:4000'),
   })
