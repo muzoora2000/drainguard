@@ -1,0 +1,19 @@
+{
+  "name": "@drainguard/simulator",
+  "version": "1.0.0",
+  "private": true,
+  "description": "DrainGuard device simulator and six-scenario demo runner",
+  "main": "src/index.ts",
+  "scripts": {
+    "start": "tsx src/index.ts",
+    "list": "tsx src/index.ts list",
+    "typecheck": "tsc -p tsconfig.json --noEmit",
+    "test": "vitest run"
+  },
+  "devDependencies": {
+    "@types/node": "22.15.30",
+    "tsx": "4.20.3",
+    "typescript": "5.9.3",
+    "vitest": "3.2.4"
+  }
+}

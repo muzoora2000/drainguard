@@ -4,7 +4,8 @@
   "private": true,
   "description": "DrainGuard - smart drainage monitoring for earlier detection of drainage problems",
   "workspaces": [
-    "apps/*"
+    "apps/*",
+    "simulator"
   ],
   "engines": {
     "node": ">=20.0.0"
@@ -23,6 +24,9 @@
     "db:studio": "npm run db:studio --workspace @drainguard/api",
     "web:dev": "npm run dev --workspace @drainguard/web",
     "web:build": "npm run build --workspace @drainguard/web",
-    "sim": "npm run start --workspace @drainguard/simulator"
+    "sim": "npm exec --workspace @drainguard/simulator -- tsx src/index.ts",
+    "sim:list": "npm run list --workspace @drainguard/simulator",
+    "sim:typecheck": "npm run typecheck --workspace @drainguard/simulator",
+    "sim:test": "npm run test --workspace @drainguard/simulator"
   }
 }
