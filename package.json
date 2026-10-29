@@ -1,0 +1,29 @@
+{
+  "name": "drainguard",
+  "version": "1.0.0",
+  "private": true,
+  "description": "DrainGuard - smart drainage monitoring for earlier detection of drainage problems",
+  "workspaces": [
+    "apps/*"
+  ],
+  "engines": {
+    "node": ">=20.0.0"
+  },
+  "scripts": {
+    "api:dev": "npm run dev --workspace @drainguard/api",
+    "api:build": "npm run build --workspace @drainguard/api",
+    "api:start": "npm run start --workspace @drainguard/api",
+    "api:test": "npm run test --workspace @drainguard/api",
+    "api:test:watch": "npm run test:watch --workspace @drainguard/api",
+    "api:lint": "npm run lint --workspace @drainguard/api",
+    "api:typecheck": "npm run typecheck --workspace @drainguard/api",
+    "db:generate": "npm run db:generate --workspace @drainguard/api",
+    "db:migrate": "npm run db:migrate --workspace @drainguard/api",
+    "db:migrate:dev": "npm run db:migrate:dev --workspace @drainguard/api",
+    "db:seed": "npm run db:seed --workspace @drainguard/api",
+    "db:studio": "npm run db:studio --workspace @drainguard/api",
+    "web:dev": "npm run dev --workspace @drainguard/web",
+    "web:build": "npm run build --workspace @drainguard/web",
+    "sim": "npm run start --workspace @drainguard/simulator"
+  }
+}

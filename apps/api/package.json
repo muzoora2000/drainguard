@@ -1,0 +1,48 @@
+{
+  "name": "@drainguard/api",
+  "version": "1.0.0",
+  "private": true,
+  "description": "DrainGuard REST API, rules engine, scheduler and SMS notification service",
+  "main": "dist/index.js",
+  "scripts": {
+    "dev": "tsx watch src/index.ts",
+    "build": "prisma generate && tsc -p tsconfig.json",
+    "start": "node dist/index.js",
+    "typecheck": "tsc -p tsconfig.json --noEmit",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "db:generate": "prisma generate",
+    "db:validate": "prisma validate",
+    "db:migrate": "prisma migrate deploy",
+    "db:migrate:dev": "prisma migrate dev",
+    "db:seed": "tsx prisma/seed.ts",
+    "db:studio": "prisma studio"
+  },
+  "dependencies": {
+    "@prisma/client": "6.19.3",
+    "bcryptjs": "3.0.3",
+    "cors": "2.8.5",
+    "dotenv": "16.6.1",
+    "express": "4.22.3",
+    "express-rate-limit": "7.5.1",
+    "helmet": "8.1.0",
+    "jsonwebtoken": "9.0.3",
+    "node-cron": "3.0.3",
+    "pino": "9.14.0",
+    "pino-http": "10.5.0",
+    "zod": "3.25.76"
+  },
+  "devDependencies": {
+    "@types/bcryptjs": "2.4.6",
+    "@types/cors": "2.8.19",
+    "@types/express": "4.17.23",
+    "@types/jsonwebtoken": "9.0.10",
+    "@types/node": "22.15.30",
+    "@types/supertest": "6.0.3",
+    "prisma": "6.19.3",
+    "supertest": "7.1.4",
+    "tsx": "4.20.3",
+    "typescript": "5.9.3",
+    "vitest": "3.2.4"
+  }
+}

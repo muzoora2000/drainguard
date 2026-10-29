@@ -1,0 +1,461 @@
+// DrainGuard database schema
+// Source of truth for the PostgreSQL (Neon-compatible) database.
+//
+// Time-series tables use BigInt identity keys. All timestamps are stored in UTC
+// (timestamptz) and are supplied by the API as ISO-8601 strings.
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider  = "postgresql"
+  url       = env("DATABASE_URL")
+  directUrl = env("DIRECT_URL")
+}
+
+// ---------------------------------------------------------------------------
+// Enums
+// ---------------------------------------------------------------------------
+
+enum Role {
+  ADMIN
+  SUPERVISOR
+  TECHNICIAN
+  ENGINEER
+}
+
+enum DrainStatus {
+  ACTIVE
+  INACTIVE
+}
+
+enum DeviceType {
+  LITTER
+  WATER_UPSTREAM
+  WATER_DOWNSTREAM
+}
+
+enum DeviceHealth {
+  UNKNOWN
+  HEALTHY
+  FAULTY
+  OFFLINE
+}
+
+enum ReadingQuality {
+  OK
+  SUSPECT
+  FAULTY
+}
+
+enum RainfallSource {
+  SENSOR
+  MANUAL
+  WEATHER_API
+}
+
+enum AlertType {
+  BASKET_NEARLY_FULL
+  HIGH_WATER
+  POSSIBLE_BLOCKAGE
+  SYSTEM_HEALTH
+  ENGINEERING_REVIEW
+}
+
+enum AlertSeverity {
+  INFO
+  WARNING
+  CRITICAL
+}
+
+enum AlertStatus {
+  ACTIVE
+  ACKNOWLEDGED
+  RESOLVED
+}
+
+enum NotificationChannel {
+  SMS
+  IN_APP
+}
+
+enum NotificationStatus {
+  PENDING
+  SENT
+  DELIVERED
+  FAILED
+}
+
+enum NotificationKind {
+  PRIMARY
+  ESCALATION
+}
+
+enum TaskType {
+  LITTER_REMOVAL
+  BLOCKAGE_INSPECTION
+  ENGINEERING_INVESTIGATION
+  DEVICE_REPAIR
+}
+
+enum TaskPriority {
+  LOW
+  MEDIUM
+  HIGH
+  URGENT
+}
+
+enum TaskStatus {
+  SCHEDULED
+  IN_PROGRESS
+  DONE
+  CANCELLED
+}
+
+// ---------------------------------------------------------------------------
+// Identity and access
+// ---------------------------------------------------------------------------
+
+model User {
+  id                String    @id @default(cuid())
+  email             String    @unique
+  passwordHash      String    @map("password_hash")
+  name              String
+  role              Role
+  phone             String?
+  active            Boolean   @default(true)
+  smsOptIn          Boolean   @default(true) @map("sms_opt_in")
+  inAppOptIn        Boolean   @default(true) @map("in_app_opt_in")
+  isFallbackContact Boolean   @default(false) @map("is_fallback_contact")
+  lastLoginAt       DateTime? @map("last_login_at") @db.Timestamptz(3)
+  createdAt         DateTime  @default(now()) @map("created_at") @db.Timestamptz(3)
+  updatedAt         DateTime  @updatedAt @map("updated_at") @db.Timestamptz(3)
+
+  refreshTokens      RefreshToken[]
+  notifications      Notification[]
+  assignments        DrainAssignment[]
+  assignedTasks      MaintenanceTask[]   @relation("TaskAssignee")
+  createdTasks       MaintenanceTask[]   @relation("TaskCreator")
+  records            MaintenanceRecord[]
+  acknowledgedAlerts Alert[]             @relation("AlertAcknowledger")
+  resolvedAlerts     Alert[]             @relation("AlertResolver")
+  fallbackForDrains  Drain[]             @relation("DrainFallbackContact")
+  auditLogs          AuditLog[]
+
+  @@index([role, active])
+  @@map("users")
+}
+
+model RefreshToken {
+  id                  String    @id @default(cuid())
+  userId              String    @map("user_id")
+  tokenHash           String    @unique @map("token_hash")
+  expiresAt           DateTime  @map("expires_at") @db.Timestamptz(3)
+  revokedAt           DateTime? @map("revoked_at") @db.Timestamptz(3)
+  replacedByTokenHash String?   @map("replaced_by_token_hash")
+  createdByIp         String?   @map("created_by_ip")
+  userAgent           String?   @map("user_agent")
+  createdAt           DateTime  @default(now()) @map("created_at") @db.Timestamptz(3)
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, revokedAt])
+  @@index([expiresAt])
+  @@map("refresh_tokens")
+}
+
+// ---------------------------------------------------------------------------
+// Drains, thresholds and devices
+// ---------------------------------------------------------------------------
+
+model Drain {
+  id                String      @id @default(cuid())
+  name              String
+  latitude          Float
+  longitude         Float
+  zone              String
+  address           String?
+  status            DrainStatus @default(ACTIVE)
+  fallbackContactId String?     @map("fallback_contact_id")
+  createdAt         DateTime    @default(now()) @map("created_at") @db.Timestamptz(3)
+  updatedAt         DateTime    @updatedAt @map("updated_at") @db.Timestamptz(3)
+
+  fallbackContact User?               @relation("DrainFallbackContact", fields: [fallbackContactId], references: [id], onDelete: SetNull)
+  thresholds      DrainThreshold?
+  devices         Device[]
+  readings        SensorReading[]
+  alerts          Alert[]
+  tasks           MaintenanceTask[]
+  records         MaintenanceRecord[]
+  assignments     DrainAssignment[]
+
+  @@index([zone, status])
+  @@index([status])
+  @@index([latitude, longitude])
+  @@map("drains")
+}
+
+model DrainThreshold {
+  id                       String   @id @default(cuid())
+  drainId                  String   @unique @map("drain_id")
+  basketFillPercent        Float    @default(85) @map("basket_fill_percent")
+  waterRiseRateCmPerMin    Float    @default(2) @map("water_rise_rate_cm_per_min")
+  levelDifferenceCm        Float    @default(15) @map("level_difference_cm")
+  differencePersistMinutes Int      @default(15) @map("difference_persist_minutes")
+  intenseRainfallMmPerHour Float    @default(20) @map("intense_rainfall_mm_per_hour")
+  rainfallLookbackMinutes  Int      @default(30) @map("rainfall_lookback_minutes")
+  heartbeatTimeoutMinutes  Int      @default(10) @map("heartbeat_timeout_minutes")
+  repeatBlockageCount      Int      @default(3) @map("repeat_blockage_count")
+  repeatBlockageWindowDays Int      @default(30) @map("repeat_blockage_window_days")
+  alertCooldownMinutes     Int      @default(30) @map("alert_cooldown_minutes")
+  escalationMinutes        Int      @default(15) @map("escalation_minutes")
+  riseRateWindowMinutes    Int      @default(10) @map("rise_rate_window_minutes")
+  levelMatchWindowMinutes  Int      @default(5) @map("level_match_window_minutes")
+  updatedAt                DateTime @updatedAt @map("updated_at") @db.Timestamptz(3)
+
+  drain Drain @relation(fields: [drainId], references: [id], onDelete: Cascade)
+
+  @@map("drain_thresholds")
+}
+
+model Device {
+  id              String       @id @default(cuid())
+  drainId         String       @map("drain_id")
+  name            String
+  serialNumber    String       @unique @map("serial_number")
+  type            DeviceType
+  apiKeyHash      String       @unique @map("api_key_hash")
+  apiKeyPrefix    String       @map("api_key_prefix")
+  healthStatus    DeviceHealth @default(UNKNOWN) @map("health_status")
+  healthReason    String?      @map("health_reason")
+  healthUpdatedAt DateTime?    @map("health_updated_at") @db.Timestamptz(3)
+  lastSeenAt      DateTime?    @map("last_seen_at") @db.Timestamptz(3)
+  lastReadingAt   DateTime?    @map("last_reading_at") @db.Timestamptz(3)
+  batteryPercent  Float?       @map("battery_percent")
+  firmwareVersion String?      @map("firmware_version")
+  createdAt       DateTime     @default(now()) @map("created_at") @db.Timestamptz(3)
+  updatedAt       DateTime     @updatedAt @map("updated_at") @db.Timestamptz(3)
+
+  drain    Drain           @relation(fields: [drainId], references: [id], onDelete: Restrict)
+  readings SensorReading[]
+  alerts   Alert[]
+
+  @@unique([drainId, type], name: "devices_drain_id_type_key")
+  @@index([drainId, type])
+  @@index([healthStatus, lastSeenAt])
+  @@index([lastSeenAt])
+  @@map("devices")
+}
+
+// ---------------------------------------------------------------------------
+// Time-series telemetry
+// ---------------------------------------------------------------------------
+
+model SensorReading {
+  id                BigInt         @id @default(autoincrement())
+  deviceId          String         @map("device_id")
+  drainId           String         @map("drain_id")
+  type              DeviceType
+  litterFillPercent Float?         @map("litter_fill_percent")
+  waterLevelCm      Float?         @map("water_level_cm")
+  quality           ReadingQuality @default(OK)
+  recordedAt        DateTime       @map("recorded_at") @db.Timestamptz(3)
+  receivedAt        DateTime       @default(now()) @map("received_at") @db.Timestamptz(3)
+  externalId        String?        @map("external_id")
+  createdAt         DateTime       @default(now()) @map("created_at") @db.Timestamptz(3)
+
+  device Device @relation(fields: [deviceId], references: [id], onDelete: Restrict)
+  drain  Drain  @relation(fields: [drainId], references: [id], onDelete: Restrict)
+
+  @@unique([deviceId, recordedAt])
+  @@unique([deviceId, externalId])
+  @@index([drainId, recordedAt(sort: Desc)])
+  @@index([deviceId, recordedAt(sort: Desc)])
+  @@index([drainId, type, recordedAt(sort: Desc)])
+  @@index([recordedAt(sort: Desc)])
+  @@map("sensor_readings")
+}
+
+model RainfallReading {
+  id         BigInt         @id @default(autoincrement())
+  zone       String
+  mmPerHour  Float          @map("mm_per_hour")
+  source     RainfallSource
+  recordedAt DateTime       @map("recorded_at") @db.Timestamptz(3)
+  receivedAt DateTime       @default(now()) @map("received_at") @db.Timestamptz(3)
+  externalId String?        @map("external_id")
+  notes      String?
+  createdAt  DateTime       @default(now()) @map("created_at") @db.Timestamptz(3)
+
+  @@unique([zone, externalId])
+  @@index([zone, recordedAt(sort: Desc)])
+  @@index([recordedAt(sort: Desc)])
+  @@map("rainfall_readings")
+}
+
+// ---------------------------------------------------------------------------
+// Alerts and notifications
+// ---------------------------------------------------------------------------
+
+model Alert {
+  id               String        @id @default(cuid())
+  drainId          String        @map("drain_id")
+  deviceId         String?       @map("device_id")
+  type             AlertType
+  severity         AlertSeverity
+  status           AlertStatus   @default(ACTIVE)
+  rule             String
+  triggerData      Json          @map("trigger_data")
+  message          String?
+  activeKey        String?       @unique @map("active_key")
+  createdAt        DateTime      @default(now()) @map("created_at") @db.Timestamptz(3)
+  updatedAt        DateTime      @updatedAt @map("updated_at") @db.Timestamptz(3)
+  acknowledgedAt   DateTime?     @map("acknowledged_at") @db.Timestamptz(3)
+  acknowledgedById String?       @map("acknowledged_by_id")
+  resolvedAt       DateTime?     @map("resolved_at") @db.Timestamptz(3)
+  resolvedById     String?       @map("resolved_by_id")
+  resolutionNote   String?       @map("resolution_note")
+  lastNotifiedAt   DateTime?     @map("last_notified_at") @db.Timestamptz(3)
+  escalationDueAt  DateTime?     @map("escalation_due_at") @db.Timestamptz(3)
+  escalatedAt      DateTime?     @map("escalated_at") @db.Timestamptz(3)
+
+  drain          Drain             @relation(fields: [drainId], references: [id], onDelete: Restrict)
+  device         Device?           @relation(fields: [deviceId], references: [id], onDelete: SetNull)
+  acknowledgedBy User?             @relation("AlertAcknowledger", fields: [acknowledgedById], references: [id], onDelete: SetNull)
+  resolvedBy     User?             @relation("AlertResolver", fields: [resolvedById], references: [id], onDelete: SetNull)
+  notifications  Notification[]
+  tasks          MaintenanceTask[]
+
+  @@index([drainId, createdAt(sort: Desc)])
+  @@index([status, severity, createdAt(sort: Desc)])
+  @@index([type, status])
+  @@index([drainId, type, createdAt(sort: Desc)])
+  @@index([status, escalationDueAt])
+  @@map("alerts")
+}
+
+model Notification {
+  id                String              @id @default(cuid())
+  alertId           String              @map("alert_id")
+  userId            String?             @map("user_id")
+  channel           NotificationChannel
+  kind              NotificationKind    @default(PRIMARY)
+  status            NotificationStatus  @default(PENDING)
+  recipient         String
+  provider          String?
+  providerMessageId String?             @map("provider_message_id")
+  providerResponse  Json?               @map("provider_response")
+  attempt           Int                 @default(1)
+  error             String?
+  nextRetryAt       DateTime?           @map("next_retry_at") @db.Timestamptz(3)
+  sentAt            DateTime?           @map("sent_at") @db.Timestamptz(3)
+  createdAt         DateTime            @default(now()) @map("created_at") @db.Timestamptz(3)
+  updatedAt         DateTime            @updatedAt @map("updated_at") @db.Timestamptz(3)
+
+  alert Alert @relation(fields: [alertId], references: [id], onDelete: Cascade)
+  user  User? @relation(fields: [userId], references: [id], onDelete: SetNull)
+
+  @@index([alertId, createdAt])
+  @@index([status, nextRetryAt])
+  @@index([userId, createdAt(sort: Desc)])
+  @@map("notifications")
+}
+
+// ---------------------------------------------------------------------------
+// Maintenance and engineering
+// ---------------------------------------------------------------------------
+
+model MaintenanceTask {
+  id           String       @id @default(cuid())
+  drainId      String       @map("drain_id")
+  alertId      String?      @map("alert_id")
+  type         TaskType
+  title        String
+  priority     TaskPriority @default(MEDIUM)
+  status       TaskStatus   @default(SCHEDULED)
+  notes        String?
+  assignedToId String?      @map("assigned_to_id")
+  createdById  String?      @map("created_by_id")
+  scheduledFor DateTime?    @map("scheduled_for") @db.Timestamptz(3)
+  dueAt        DateTime?    @map("due_at") @db.Timestamptz(3)
+  startedAt    DateTime?    @map("started_at") @db.Timestamptz(3)
+  completedAt  DateTime?    @map("completed_at") @db.Timestamptz(3)
+  createdAt    DateTime     @default(now()) @map("created_at") @db.Timestamptz(3)
+  updatedAt    DateTime     @updatedAt @map("updated_at") @db.Timestamptz(3)
+
+  drain      Drain               @relation(fields: [drainId], references: [id], onDelete: Restrict)
+  alert      Alert?              @relation(fields: [alertId], references: [id], onDelete: SetNull)
+  assignedTo User?               @relation("TaskAssignee", fields: [assignedToId], references: [id], onDelete: SetNull)
+  createdBy  User?               @relation("TaskCreator", fields: [createdById], references: [id], onDelete: SetNull)
+  records    MaintenanceRecord[]
+
+  @@index([status, priority, scheduledFor])
+  @@index([assignedToId, status])
+  @@index([drainId, status, createdAt(sort: Desc)])
+  @@index([alertId])
+  @@map("maintenance_tasks")
+}
+
+model MaintenanceRecord {
+  id            String   @id @default(cuid())
+  taskId        String   @map("task_id")
+  drainId       String   @map("drain_id")
+  performedById String   @map("performed_by_id")
+  notes         String
+  actionsTaken  String?  @map("actions_taken")
+  photos        Json?
+  completedAt   DateTime @map("completed_at") @db.Timestamptz(3)
+  createdAt     DateTime @default(now()) @map("created_at") @db.Timestamptz(3)
+
+  task        MaintenanceTask @relation(fields: [taskId], references: [id], onDelete: Restrict)
+  drain       Drain           @relation(fields: [drainId], references: [id], onDelete: Restrict)
+  performedBy User            @relation(fields: [performedById], references: [id], onDelete: Restrict)
+
+  @@index([drainId, completedAt(sort: Desc)])
+  @@index([taskId])
+  @@index([performedById])
+  @@map("maintenance_records")
+}
+
+model DrainAssignment {
+  id        String   @id @default(cuid())
+  userId    String   @map("user_id")
+  drainId   String?  @map("drain_id")
+  zone      String?
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz(3)
+
+  user  User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+  drain Drain? @relation(fields: [drainId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, drainId])
+  @@unique([userId, zone])
+  @@index([drainId])
+  @@index([zone])
+  @@index([userId])
+  @@map("drain_assignments")
+}
+
+// ---------------------------------------------------------------------------
+// Audit trail
+// ---------------------------------------------------------------------------
+
+model AuditLog {
+  id         BigInt   @id @default(autoincrement())
+  actorId    String?  @map("actor_id")
+  actorRole  Role?    @map("actor_role")
+  action     String
+  entityType String   @map("entity_type")
+  entityId   String?  @map("entity_id")
+  metadata   Json?
+  ip         String?
+  userAgent  String?  @map("user_agent")
+  createdAt  DateTime @default(now()) @map("created_at") @db.Timestamptz(3)
+
+  actor User? @relation(fields: [actorId], references: [id], onDelete: SetNull)
+
+  @@index([entityType, entityId, createdAt(sort: Desc)])
+  @@index([actorId, createdAt(sort: Desc)])
+  @@index([createdAt(sort: Desc)])
+  @@map("audit_logs")
+}
