@@ -11,7 +11,7 @@
     "node": ">=20.0.0"
   },
   "scripts": {
-    "postinstall": "npm run db:generate",
+    "postinstall": "node scripts/ensure-prisma-client.mjs",
     "api:dev": "npm run dev --workspace @drainguard/api",
     "api:build": "npm run build --workspace @drainguard/api",
     "api:start": "npm run start --workspace @drainguard/api",
