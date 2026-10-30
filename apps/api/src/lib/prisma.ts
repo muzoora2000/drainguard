@@ -1,3 +1,4 @@
+import { PrismaNeon } from '@prisma/adapter-neon';
 import { PrismaClient } from '@prisma/client';
 import { env } from '../config/env';
 import { logger } from './logger';
@@ -7,6 +8,7 @@ const globalForPrisma = globalThis as unknown as { prisma?: PrismaClient };
 export const prisma =
   globalForPrisma.prisma ??
   new PrismaClient({
+    adapter: new PrismaNeon({ connectionString: env.DATABASE_URL }),
     log:
       env.NODE_ENV === 'development'
         ? [
