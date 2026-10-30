@@ -172,3 +172,389 @@
   -ms-overflow-style: none;
   scrollbar-width: none;
 }
+
+html.dark {
+  color-scheme: dark;
+  scrollbar-color: #334155 #08111d;
+}
+
+.dark body {
+  background-color: #08111d;
+  color: #e2e8f0;
+}
+
+.dark ::selection {
+  background-color: #145249;
+  color: #f8fafc;
+}
+
+.dark :focus-visible {
+  --tw-ring-offset-color: #08111d;
+}
+
+.dark .bg-mist {
+  background-color: #08111d;
+}
+
+.dark .bg-white {
+  background-color: #0f1a29;
+}
+
+.dark [class~='bg-white/90'] {
+  background-color: rgb(15 26 41 / 0.9);
+}
+
+.dark [class~='bg-white/95'] {
+  background-color: rgb(15 26 41 / 0.95);
+}
+
+.dark .bg-slate-50 {
+  background-color: #111d2e;
+}
+
+.dark [class~='bg-slate-50/70'] {
+  background-color: rgb(17 29 46 / 0.7);
+}
+
+.dark [class~='bg-slate-50/80'] {
+  background-color: rgb(17 29 46 / 0.8);
+}
+
+.dark .bg-slate-100 {
+  background-color: #172437;
+}
+
+.dark .bg-slate-200 {
+  background-color: #223247;
+}
+
+.dark .bg-slate-300 {
+  background-color: #334155;
+}
+
+.dark .text-slate-900 {
+  color: #f8fafc;
+}
+
+.dark .text-slate-800 {
+  color: #e2e8f0;
+}
+
+.dark .text-slate-700 {
+  color: #cbd5e1;
+}
+
+.dark .text-slate-600 {
+  color: #b6c4d6;
+}
+
+.dark .text-slate-500 {
+  color: #94a3b8;
+}
+
+.dark .border-slate-100 {
+  border-color: #1a293d;
+}
+
+.dark .border-slate-200 {
+  border-color: #223247;
+}
+
+.dark [class~='border-slate-200/80'] {
+  border-color: #223247;
+}
+
+.dark .border-slate-300 {
+  border-color: #334155;
+}
+
+.dark .divide-slate-100 > :not([hidden]) ~ :not([hidden]) {
+  border-color: #1a293d;
+}
+
+.dark .ring-slate-200 {
+  --tw-ring-color: #26364c;
+}
+
+.dark .ring-slate-300 {
+  --tw-ring-color: #334155;
+}
+
+.dark .bg-red-50 {
+  background-color: rgb(127 29 29 / 0.22);
+}
+
+.dark .bg-red-100 {
+  background-color: rgb(127 29 29 / 0.32);
+}
+
+.dark .text-red-600,
+.dark .text-red-700 {
+  color: #fca5a5;
+}
+
+.dark .text-red-800,
+.dark .text-red-900 {
+  color: #fecaca;
+}
+
+.dark .border-red-200,
+.dark .border-red-300 {
+  border-color: rgb(248 113 113 / 0.35);
+}
+
+.dark .ring-red-200 {
+  --tw-ring-color: rgb(248 113 113 / 0.32);
+}
+
+.dark .bg-amber-50 {
+  background-color: rgb(120 53 15 / 0.24);
+}
+
+.dark .text-amber-600,
+.dark .text-amber-700 {
+  color: #fcd34d;
+}
+
+.dark .text-amber-800 {
+  color: #fde68a;
+}
+
+.dark .border-amber-200,
+.dark .border-amber-300 {
+  border-color: rgb(251 191 36 / 0.35);
+}
+
+.dark .ring-amber-200 {
+  --tw-ring-color: rgb(251 191 36 / 0.32);
+}
+
+.dark .bg-emerald-50 {
+  background-color: rgb(6 78 59 / 0.24);
+}
+
+.dark .text-emerald-600,
+.dark .text-emerald-700 {
+  color: #6ee7b7;
+}
+
+.dark .text-emerald-800,
+.dark .text-emerald-900 {
+  color: #a7f3d0;
+}
+
+.dark .border-emerald-200 {
+  border-color: rgb(52 211 153 / 0.35);
+}
+
+.dark .ring-emerald-200 {
+  --tw-ring-color: rgb(52 211 153 / 0.32);
+}
+
+.dark .bg-blue-50 {
+  background-color: rgb(30 58 138 / 0.24);
+}
+
+.dark .text-blue-600,
+.dark .text-blue-700 {
+  color: #93c5fd;
+}
+
+.dark .border-blue-200 {
+  border-color: rgb(96 165 250 / 0.35);
+}
+
+.dark .ring-blue-200 {
+  --tw-ring-color: rgb(96 165 250 / 0.32);
+}
+
+.dark .bg-violet-50 {
+  background-color: rgb(76 29 149 / 0.24);
+}
+
+.dark .text-violet-600,
+.dark .text-violet-700 {
+  color: #c4b5fd;
+}
+
+.dark .border-violet-200 {
+  border-color: rgb(167 139 250 / 0.35);
+}
+
+.dark .ring-violet-200 {
+  --tw-ring-color: rgb(167 139 250 / 0.32);
+}
+
+.dark .bg-cyan-50 {
+  background-color: rgb(21 94 117 / 0.24);
+}
+
+.dark .text-cyan-600,
+.dark .text-cyan-700 {
+  color: #67e8f9;
+}
+
+.dark .border-cyan-200 {
+  border-color: rgb(34 211 238 / 0.35);
+}
+
+.dark .ring-cyan-200 {
+  --tw-ring-color: rgb(34 211 238 / 0.32);
+}
+
+.dark .bg-brand-50 {
+  background-color: rgb(20 102 90 / 0.22);
+}
+
+.dark [class~='bg-brand-50/40'] {
+  background-color: rgb(20 102 90 / 0.16);
+}
+
+.dark .bg-brand-100 {
+  background-color: rgb(20 102 90 / 0.32);
+}
+
+.dark .text-brand-600 {
+  color: #2dd4bf;
+}
+
+.dark .text-brand-700,
+.dark .text-brand-800 {
+  color: #5eead4;
+}
+
+.dark .border-brand-200,
+.dark .border-brand-300 {
+  border-color: rgb(45 212 191 / 0.35);
+}
+
+.dark .ring-brand-300 {
+  --tw-ring-color: rgb(45 212 191 / 0.35);
+}
+
+.dark .shadow-card {
+  box-shadow: 0 1px 2px rgb(0 0 0 / 0.35), 0 10px 30px rgb(0 0 0 / 0.24);
+}
+
+.dark .field-label {
+  color: #cbd5e1;
+}
+
+.dark .field-input {
+  border-color: #26364c;
+  background-color: #0c1726;
+  color: #e2e8f0;
+  box-shadow: none;
+}
+
+.dark .field-input::placeholder {
+  color: #64748b;
+}
+
+.dark .field-input:disabled {
+  background-color: #111d2e;
+  color: #64748b;
+}
+
+.dark .field-select {
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 20 20'%3E%3Cpath stroke='%2394a3b8' stroke-linecap='round' stroke-linejoin='round' stroke-width='1.7' d='m6 8 4 4 4-4'/%3E%3C/svg%3E");
+}
+
+.dark .field-select option {
+  background-color: #0f1a29;
+  color: #e2e8f0;
+}
+
+.dark .data-table thead th {
+  border-color: #223247;
+  background-color: rgb(17 29 46 / 0.85);
+  color: #94a3b8;
+}
+
+.dark .data-table tbody td {
+  border-color: #1a293d;
+  color: #cbd5e1;
+}
+
+.dark .data-table tbody tr:hover {
+  background-color: rgb(21 35 55 / 0.7);
+}
+
+.dark [class*='hover:bg-slate-50']:hover {
+  background-color: #152337;
+}
+
+.dark [class*='hover:bg-slate-100']:hover {
+  background-color: #1b2a3f;
+}
+
+.dark [class*='hover:bg-red-50']:hover {
+  background-color: rgb(127 29 29 / 0.3);
+}
+
+.dark [class*='hover:bg-brand-100']:hover {
+  background-color: rgb(20 102 90 / 0.38);
+}
+
+.dark [class*='hover:text-slate-900']:hover {
+  color: #f8fafc;
+}
+
+.dark [class*='hover:text-slate-800']:hover {
+  color: #e2e8f0;
+}
+
+.dark [class*='hover:text-slate-700']:hover {
+  color: #cbd5e1;
+}
+
+.dark .leaflet-container {
+  background: #0b1624;
+}
+
+.dark .leaflet-tile-pane {
+  filter: brightness(0.65) invert(1) contrast(1.15) hue-rotate(180deg) saturate(0.65);
+}
+
+.dark .leaflet-control-attribution {
+  background-color: rgb(15 26 41 / 0.85) !important;
+  color: #94a3b8 !important;
+}
+
+.dark .leaflet-control-attribution a {
+  color: #5eead4 !important;
+}
+
+.dark .leaflet-bar a {
+  border-color: #223247;
+  background-color: #0f1a29;
+  color: #cbd5e1;
+}
+
+.dark .leaflet-bar a:hover {
+  background-color: #172437;
+}
+
+.dark .leaflet-popup-content-wrapper,
+.dark .leaflet-popup-tip {
+  background-color: #0f1a29;
+  color: #e2e8f0;
+}
+
+.dark .recharts-cartesian-grid line {
+  stroke: #223247;
+}
+
+.dark .recharts-text {
+  fill: #94a3b8;
+}
+
+.dark .recharts-default-tooltip {
+  border-color: #223247 !important;
+  background-color: #0f1a29 !important;
+  color: #e2e8f0 !important;
+}
+
+.dark .recharts-tooltip-label {
+  color: #f8fafc !important;
+}

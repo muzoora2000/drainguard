@@ -24,6 +24,7 @@ import { useAuth } from '../lib/auth';
 import { cn, formatRelative, initials } from '../lib/format';
 import { useRealtime, type RealtimeStatus } from '../lib/realtime';
 import type { NotificationItem, Paginated } from '../lib/types';
+import { ThemeToggle } from './ThemeToggle';
 import {
   Button,
   Field,
@@ -407,6 +408,7 @@ export function AppShell() {
               />
               {realtime === 'connected' ? 'Live updates' : realtime === 'connecting' ? 'Connecting' : 'Polling 10s'}
             </span>
+            <ThemeToggle />
             <NotificationsMenu />
             <div className="relative">
               <button

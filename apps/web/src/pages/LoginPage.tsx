@@ -3,6 +3,7 @@ import { Navigate, useLocation, useNavigate } from 'react-router-dom';
 import { AlertTriangle, ArrowRight, Droplets, Radio, ShieldCheck, Waves } from 'lucide-react';
 import { ApiError } from '../lib/api';
 import { useAuth } from '../lib/auth';
+import { ThemeToggle } from '../components/ThemeToggle';
 import { Button, FormError, PasswordInput } from '../components/ui';
 
 export function LoginPage() {
@@ -38,6 +39,9 @@ export function LoginPage() {
 
   return (
     <main className="grid min-h-screen bg-white lg:grid-cols-[1.08fr_0.92fr]">
+      <div className="fixed right-4 top-4 z-20">
+        <ThemeToggle />
+      </div>
       <section className="relative hidden overflow-hidden bg-ink px-10 py-12 text-white lg:flex lg:flex-col xl:px-16">
         <div className="absolute -right-28 -top-24 h-96 w-96 rounded-full bg-brand-500/20 blur-3xl" />
         <div className="absolute -bottom-32 left-12 h-80 w-80 rounded-full bg-cyan-500/10 blur-3xl" />
