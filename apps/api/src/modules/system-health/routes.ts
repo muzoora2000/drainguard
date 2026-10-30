@@ -13,12 +13,14 @@ export async function healthPayload() {
   const started = Date.now();
   let database = 'ok';
   let databaseLatencyMs: number | null = null;
+  let databaseError: string | null = null;
 
   try {
     await prisma.$queryRaw`SELECT 1`;
     databaseLatencyMs = Date.now() - started;
-  } catch {
+  } catch (error) {
     database = 'unavailable';
+    databaseError = error instanceof Error ? error.message : String(error);
   }
 
   return {
@@ -29,7 +31,11 @@ export async function healthPayload() {
     uptimeSeconds: Math.round(process.uptime()),
     timestamp: new Date().toISOString(),
     checks: {
-      database: { status: database, latencyMs: databaseLatencyMs },
+      database: {
+        status: database,
+        latencyMs: databaseLatencyMs,
+        error: databaseError,
+      },
     },
   };
 }
