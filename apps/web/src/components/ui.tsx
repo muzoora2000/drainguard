@@ -8,6 +8,7 @@ import {
   useRef,
   useState,
   type ButtonHTMLAttributes,
+  type InputHTMLAttributes,
   type ReactNode,
 } from 'react';
 import { createPortal } from 'react-dom';
@@ -16,6 +17,8 @@ import {
   CheckCircle2,
   ChevronLeft,
   ChevronRight,
+  Eye,
+  EyeOff,
   Inbox,
   Loader2,
   X,
@@ -319,6 +322,29 @@ export function Field({
       {children}
       {error ? <p className="mt-1.5 text-xs font-medium text-red-600">{error}</p> : null}
       {!error && hint ? <p className="mt-1.5 text-xs text-slate-500">{hint}</p> : null}
+    </div>
+  );
+}
+
+type PasswordInputProps = Omit<InputHTMLAttributes<HTMLInputElement>, 'type'>;
+
+export function PasswordInput({ className, ...props }: PasswordInputProps) {
+  const [visible, setVisible] = useState(false);
+  return (
+    <div className="relative">
+      <input
+        {...props}
+        type={visible ? 'text' : 'password'}
+        className={cn('field-input pr-11', className)}
+      />
+      <button
+        type="button"
+        onClick={() => setVisible((current) => !current)}
+        className="absolute right-1 top-1 rounded-lg p-2 text-slate-400 hover:bg-slate-100 hover:text-slate-700"
+        aria-label={visible ? 'Hide password' : 'Show password'}
+      >
+        {visible ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+      </button>
     </div>
   );
 }

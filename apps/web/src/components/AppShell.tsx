@@ -29,6 +29,7 @@ import {
   Field,
   FormError,
   Modal,
+  PasswordInput,
   RoleBadge,
   useToast,
 } from './ui';
@@ -479,10 +480,8 @@ export function AppShell() {
         <form id="change-password-form" className="space-y-4" onSubmit={submitPassword}>
           {formError ? <FormError>{formError}</FormError> : null}
           <Field label="Current password" htmlFor="current-password">
-            <input
+            <PasswordInput
               id="current-password"
-              type="password"
-              className="field-input"
               value={currentPassword}
               onChange={(event) => setCurrentPassword(event.target.value)}
               autoComplete="current-password"
@@ -490,10 +489,8 @@ export function AppShell() {
             />
           </Field>
           <Field label="New password" htmlFor="new-password" hint="At least 8 characters with a letter and number.">
-            <input
+            <PasswordInput
               id="new-password"
-              type="password"
-              className="field-input"
               value={newPassword}
               onChange={(event) => setNewPassword(event.target.value)}
               autoComplete="new-password"
@@ -501,10 +498,8 @@ export function AppShell() {
             />
           </Field>
           <Field label="Confirm new password" htmlFor="confirm-password">
-            <input
+            <PasswordInput
               id="confirm-password"
-              type="password"
-              className="field-input"
               value={confirmPassword}
               onChange={(event) => setConfirmPassword(event.target.value)}
               autoComplete="new-password"

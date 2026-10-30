@@ -1,9 +1,9 @@
 import { useState, type FormEvent } from 'react';
 import { Navigate, useLocation, useNavigate } from 'react-router-dom';
-import { AlertTriangle, ArrowRight, Droplets, Eye, EyeOff, Radio, ShieldCheck, Waves } from 'lucide-react';
+import { AlertTriangle, ArrowRight, Droplets, Radio, ShieldCheck, Waves } from 'lucide-react';
 import { ApiError } from '../lib/api';
 import { useAuth } from '../lib/auth';
-import { Button, FormError } from '../components/ui';
+import { Button, FormError, PasswordInput } from '../components/ui';
 
 export function LoginPage() {
   const { isAuthenticated, login, signingIn } = useAuth();
@@ -11,7 +11,6 @@ export function LoginPage() {
   const location = useLocation();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
-  const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   if (isAuthenticated) {
@@ -133,26 +132,14 @@ export function LoginPage() {
               <label htmlFor="password" className="field-label">
                 Password
               </label>
-              <div className="relative">
-                <input
-                  id="password"
-                  type={showPassword ? 'text' : 'password'}
-                  className="field-input pr-11"
-                  value={password}
-                  onChange={(event) => setPassword(event.target.value)}
-                  placeholder="Enter your password"
-                  autoComplete="current-password"
-                  required
-                />
-                <button
-                  type="button"
-                  onClick={() => setShowPassword((current) => !current)}
-                  className="absolute right-1 top-1 rounded-lg p-2 text-slate-400 hover:bg-slate-100 hover:text-slate-700"
-                  aria-label={showPassword ? 'Hide password' : 'Show password'}
-                >
-                  {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
-                </button>
-              </div>
+              <PasswordInput
+                id="password"
+                value={password}
+                onChange={(event) => setPassword(event.target.value)}
+                placeholder="Enter your password"
+                autoComplete="current-password"
+                required
+              />
             </div>
 
             <Button type="submit" size="lg" className="w-full" loading={signingIn}>

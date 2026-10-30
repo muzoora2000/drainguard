@@ -60,6 +60,7 @@ import {
   Modal,
   PageHeader,
   Pagination,
+  PasswordInput,
   RoleBadge,
   SidePanel,
   Tabs,
@@ -538,10 +539,8 @@ function UsersAdmin() {
               hint={editing ? 'Leave blank to keep the current password.' : 'At least 8 characters with a letter and number.'}
               className="sm:col-span-2"
             >
-              <input
+              <PasswordInput
                 id="user-password"
-                type="password"
-                className="field-input"
                 value={form.password}
                 onChange={(event) => setForm({ ...form, password: event.target.value })}
                 autoComplete="new-password"
