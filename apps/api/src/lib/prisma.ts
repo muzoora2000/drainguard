@@ -20,7 +20,7 @@ if (env.NODE_ENV !== 'production') {
   globalForPrisma.prisma = prisma;
 }
 
-const onPrismaEvent = prisma.$on as unknown as (
+const onPrismaEvent = prisma.$on.bind(prisma) as unknown as (
   event: 'warn' | 'error',
   callback: (payload: unknown) => void,
 ) => void;
