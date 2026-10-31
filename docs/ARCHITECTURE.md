@@ -5,9 +5,9 @@
 > It reduces some flood risk but **cannot prevent every flood**. No part of the UI,
 > API or documentation should claim otherwise.
 
-Version: 1.0 (Phase 1)
-Status: architecture frozen for implementation; see [ASSUMPTIONS.md](./ASSUMPTIONS.md)
-and [ERD.md](./ERD.md).
+Version: 1.0 (complete)
+Status: implemented and deployed; see [ASSUMPTIONS.md](./ASSUMPTIONS.md),
+[ERD.md](./ERD.md), [API.md](./API.md) and [DEMO.md](./DEMO.md).
 
 ---
 
@@ -291,7 +291,7 @@ plain snapshot of state and returns decisions. It performs no I/O, which makes e
 rule deterministic and unit-testable without a database.
 
 ```ts
-// Actual signatures are implemented in Phase 2.
+// Current signatures live in apps/api/src/rules/types.ts.
 type RuleInput = {
   now: Date;
   drain: DrainSnapshot;              // id, zone, status, thresholds
@@ -672,15 +672,16 @@ flowchart LR
 | Concern | Setting |
 |---|---|
 | Frontend | Vercel static build; `VITE_API_URL` points at the Render API. |
-| Backend | Render Web Service; build `npm ci && npm run build --workspace @drainguard/api`; start `npm run db:migrate && npm run start --workspace @drainguard/api` (exact commands in Phase 5). |
+| Backend | Render Web Service; build `npm ci --include=dev && npm run api:build`; start `npm run api:start`. |
 | Database | Neon Postgres; pooled URL for runtime, direct URL for migrations. |
-| Migrations | `prisma migrate deploy`; seed with `npm run db:seed`. |
+| Migrations | Render pre-deploy or one-off command: `npm run db:migrate`; seed with `SEED_PASSWORD` set and `npm run db:seed`. |
 | CORS | `CORS_ORIGINS=https://<vercel-app>.vercel.app` (plus preview URLs if needed). |
 | Secrets | Render environment variables; never in the repository. |
 | Health check | `GET /health` (database ping included). |
 | Scheduler | Runs inside the single Render instance; `JOBS_ENABLED=true`. |
 
-Detailed, step-by-step deployment and the six-scenario demo are delivered in Phase 5.
+Step-by-step setup, deployment and verification are in [README.md](../README.md).
+The six-scenario demo is in [DEMO.md](./DEMO.md).
 
 ---
 
@@ -689,17 +690,17 @@ Detailed, step-by-step deployment and the six-scenario demo are delivered in Pha
 ```
 DrainGuard/
 ├── apps/
-│   ├── api/                              # Phase 1/2
+│   ├── api/                              # Express API
 │   │   ├── prisma/
-│   │   │   ├── schema.prisma             # Phase 1 (done)
+│   │   │   ├── schema.prisma             # data model
 │   │   │   ├── migrations/
 │   │   │   │   ├── 20260101000000_init/migration.sql
 │   │   │   │   └── migration_lock.toml
-│   │   │   └── seed.ts                   # Phase 3
+│   │   │   └── seed.ts                   # demo data
 │   │   ├── src/
-│   │   │   ├── index.ts                  # HTTP + scheduler bootstrap (Phase 2)
-│   │   │   ├── app.ts                    # Express app factory (Phase 2)
-│   │   │   ├── config/env.ts             # validated env (Phase 2)
+│   │   │   ├── index.ts                  # HTTP + scheduler bootstrap
+│   │   │   ├── app.ts                    # Express app factory
+│   │   │   ├── config/env.ts             # validated env
 │   │   │   ├── lib/                      # prisma, logger, errors, audit, serializers
 │   │   │   ├── middleware/               # auth, rbac, validate, rate limit, errors
 │   │   │   ├── modules/
@@ -720,61 +721,61 @@ DrainGuard/
 │   │   ├── tests/
 │   │   │   ├── rules/                    # unit tests for every rule
 │   │   │   └── api/                      # Supertest integration tests
-│   │   ├── .env.example                  # Phase 1 (done)
+│   │   ├── .env.example
 │   │   ├── package.json
 │   │   └── tsconfig.json
-│   └── web/                              # Phase 4
+│   └── web/                              # React SPA
 │       ├── src/
 │       │   ├── app/                      # router, providers
-│       │   ├── components/               # layout, ui, map, charts
+│       │   ├── components/               # layout, ui, theme, map, charts
 │       │   ├── features/                 # auth, drains, alerts, tasks, admin, reports
-│       │   ├── lib/                      # api client, auth context, SSE, formatters
-│       │   ├── pages/                    # 9 pages
+│       │   ├── lib/                      # api client, auth context, SSE, theme, formatters
+│       │   ├── pages/                    # 11 pages
 │       │   ├── main.tsx
 │       │   └── index.css
 │       ├── .env.example
 │       ├── package.json
 │       └── vite.config.ts
-├── simulator/                            # Phase 3
+├── simulator/                            # six-scenario demo runner
 │   ├── src/
 │   │   ├── index.ts                      # CLI / interactive scenarios
 │   │   ├── scenarios.ts                  # six scenario recipes
 │   │   └── client.ts                     # device-key API client
 │   └── package.json
+├── scripts/                              # install/build helpers
 ├── docs/
 │   ├── ARCHITECTURE.md                   # this file
 │   ├── ASSUMPTIONS.md
 │   ├── ERD.md
-│   ├── API.md                            # Phase 2 (OpenAPI-style)
-│   └── DEMO.md                           # Phase 5
+│   ├── API.md                            # HTTP reference
+│   └── DEMO.md                           # six-scenario demo guide
 ├── .gitignore
 ├── package.json                          # npm workspaces
-└── README.md                             # Phase 5
+└── README.md                             # setup, deployment and overview
 ```
 
 ---
 
-## 15. API surface (implemented in Phase 2)
+## 15. API surface
 
 | Group | Endpoints |
 |---|---|
-| Auth | `POST /api/auth/login`, `POST /api/auth/refresh`, `POST /api/auth/logout`, `GET /api/auth/me` |
-| Ingestion | `POST /api/readings` (device key) |
-| Rainfall | `POST /api/rainfall`, `GET /api/rainfall` |
-| Drains | `GET/POST /api/drains`, `GET/PATCH/DELETE /api/drains/:id`, `GET/PUT /api/drains/:id/thresholds`, `GET /api/drains/:id/readings`, `GET /api/drains/:id/overview` |
-| Readings | `GET /api/readings` with drain, device, from, to, aggregation |
-| Alerts | `GET /api/alerts`, `GET /api/alerts/:id`, `POST /api/alerts/:id/acknowledge`, `POST /api/alerts/:id/resolve`, `GET /api/alerts/history` |
-| Notifications | `GET /api/alerts/:id/notifications` |
-| Tasks | `GET/POST /api/tasks`, `GET/PATCH /api/tasks/:id`, `POST /api/tasks/:id/assign`, `POST /api/tasks/:id/start`, `POST /api/tasks/:id/complete`, `POST /api/tasks/:id/records`, `GET /api/maintenance-records` |
-| Users & contacts | `GET/POST /api/users`, `GET/PATCH/DELETE /api/users/:id`, `GET/POST/DELETE /api/users/:id/assignments`, `GET /api/contacts` |
-| Devices | `GET /api/devices`, `POST /api/devices`, `PATCH /api/devices/:id`, `POST /api/devices/:id/rotate-key` |
-| Reports | `GET /api/reports/summary`, `/alerts-by-drain`, `/response-times`, `/repeat-blockages` |
-| System health | `GET /api/system-health/devices`, `GET /health` |
-| Audit | `GET /api/audit` (admin) |
+| Auth | `POST /api/auth/login`, `/refresh`, `/logout`, `/change-password`; `GET /api/auth/me` |
+| Ingestion | `POST /api/ingest/readings`, `POST /api/ingest/rainfall` (device key) |
+| Rainfall | `GET /api/rainfall`, `GET /api/rainfall/latest`, `POST /api/rainfall` |
+| Drains | `GET/POST /api/drains`, `GET/PATCH/DELETE /api/drains/:id`, `GET /api/drains/:id/live` |
+| Readings | `GET /api/readings`, `GET /api/readings/latest` |
+| Alerts | `GET /api/alerts`, `GET /api/alerts/:id`, `POST /api/alerts/:id/acknowledge`, `POST /api/alerts/:id/resolve` |
+| Notifications | `GET /api/notifications` |
+| Tasks | `GET/POST /api/tasks`, `GET/PATCH/DELETE /api/tasks/:id`, `POST /api/tasks/:id/records` |
+| Users | `GET/POST /api/users`, `GET/PATCH /api/users/:id`, `GET/PUT /api/users/:id/assignments` |
+| Devices | `GET/POST /api/devices`, `GET/PATCH /api/devices/:id`, `POST /api/devices/:id/rotate-key` |
+| Reports | `GET /api/reports/overview`, `GET /api/reports/alerts.csv`, `GET /api/reports/tasks.csv` |
+| System health and audit | `GET /health`, `GET /api/system/health`, `GET /api/system/audit-logs` |
 | Real time | `GET /api/events` (SSE) |
 
 Every list endpoint is paginated and filterable. Full request/response examples are in
-`docs/API.md` (Phase 2).
+[API.md](./API.md).
 
 ---
 
