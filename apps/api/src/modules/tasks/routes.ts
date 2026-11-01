@@ -14,6 +14,7 @@ import { getPagination, paginated, paginationSchema } from '../../lib/pagination
 import { requireAuth } from '../../middleware/auth';
 import { requireRoles } from '../../middleware/rbac';
 import { writeAudit } from '../../lib/audit';
+import { canAccessDrain, drainAccessScope } from '../../lib/drain-access';
 
 const router = Router();
 router.use(requireAuth);
@@ -43,10 +44,16 @@ router.get(
     const { page, pageSize, skip, take } = getPagination(query);
 
     const isTechnician = req.user!.role === 'TECHNICIAN';
+    const isEngineer = req.user!.role === 'ENGINEER';
+    const technicianScope = isTechnician ? await drainAccessScope(req.user!) : null;
     const where: Prisma.MaintenanceTaskWhereInput = {
       ...(query.status ? { status: query.status } : {}),
       ...(query.priority ? { priority: query.priority } : {}),
-      ...(query.type ? { type: query.type } : {}),
+      ...(isEngineer
+        ? { type: TaskType.ENGINEERING_INVESTIGATION }
+        : query.type
+          ? { type: query.type }
+          : {}),
       ...(query.drainId ? { drainId: query.drainId } : {}),
       ...(query.assignedToId ? { assignedToId: query.assignedToId } : {}),
       ...(query.overdue
@@ -55,9 +62,14 @@ router.get(
             status: { in: ['SCHEDULED', 'IN_PROGRESS'] },
           }
         : {}),
-      ...(isTechnician && !query.assignedToId
+      ...(isTechnician
         ? {
-            OR: [{ assignedToId: req.user!.id }, { assignedToId: null }],
+            OR: [
+              { assignedToId: req.user!.id },
+              ...(query.assignedToId
+                ? []
+                : [{ assignedToId: null, drain: { is: technicianScope ?? {} } }]),
+            ],
           }
         : {}),
       ...(query.mine ? { assignedToId: req.user!.id } : {}),
@@ -157,6 +169,16 @@ router.get(
     ) {
       throw new ForbiddenError('This task is assigned to another technician');
     }
+    if (
+      req.user!.role === 'TECHNICIAN' &&
+      !task.assignedToId &&
+      !(await canAccessDrain(req.user!, task.drainId))
+    ) {
+      throw new ForbiddenError('This task is outside your assigned drains');
+    }
+    if (req.user!.role === 'ENGINEER' && task.type !== 'ENGINEERING_INVESTIGATION') {
+      throw new ForbiddenError('Engineers can only view engineering investigations');
+    }
 
     const records = await prisma.maintenanceRecord.findMany({
       where: { taskId: id },
@@ -182,6 +204,7 @@ const updateSchema = z
 
 router.patch(
   '/:id',
+  requireRoles('ADMIN', 'SUPERVISOR', 'TECHNICIAN'),
   asyncHandler(async (req, res) => {
     const { id } = idParamSchema.parse(req.params);
     const body = updateSchema.parse(req.body);
@@ -191,6 +214,12 @@ router.patch(
     if (role === 'TECHNICIAN') {
       if (existing.assignedToId && existing.assignedToId !== req.user!.id) {
         throw new ForbiddenError('This task is assigned to another technician');
+      }
+      if (
+        !existing.assignedToId &&
+        !(await canAccessDrain(req.user!, existing.drainId))
+      ) {
+        throw new ForbiddenError('This task is outside your assigned drains');
       }
       if (body.assignedToId && body.assignedToId !== req.user!.id) {
         throw new ForbiddenError('Technicians can only assign tasks to themselves');
@@ -297,11 +326,12 @@ const recordSchema = z.object({
 
 router.post(
   '/:id/records',
-  requireRoles('ADMIN', 'SUPERVISOR', 'TECHNICIAN'),
+  requireRoles('ADMIN', 'SUPERVISOR', 'TECHNICIAN', 'ENGINEER'),
   asyncHandler(async (req, res) => {
     const { id } = idParamSchema.parse(req.params);
     const body = recordSchema.parse(req.body);
     const existing = await findTaskOrThrow(id);
+    const isEngineer = req.user!.role === 'ENGINEER';
 
     if (
       req.user!.role === 'TECHNICIAN' &&
@@ -309,6 +339,19 @@ router.post(
       existing.assignedToId !== req.user!.id
     ) {
       throw new ForbiddenError('This task is assigned to another technician');
+    }
+    if (
+      req.user!.role === 'TECHNICIAN' &&
+      !existing.assignedToId &&
+      !(await canAccessDrain(req.user!, existing.drainId))
+    ) {
+      throw new ForbiddenError('This task is outside your assigned drains');
+    }
+    if (isEngineer && existing.type !== 'ENGINEERING_INVESTIGATION') {
+      throw new ForbiddenError('Engineers can only record findings on engineering investigations');
+    }
+    if (isEngineer && (existing.status === 'DONE' || existing.status === 'CANCELLED')) {
+      throw new ConflictError('Findings cannot be added to a completed or cancelled investigation');
     }
 
     const completedAt = body.completedAt ?? new Date();

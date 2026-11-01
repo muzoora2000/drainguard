@@ -1,9 +1,10 @@
 import { randomBytes } from 'node:crypto';
 import { Router } from 'express';
-import { DeviceHealth, DeviceType } from '@prisma/client';
+import { DeviceHealth, DeviceType, Prisma } from '@prisma/client';
 import { z } from 'zod';
 import { prisma } from '../../lib/prisma';
 import { asyncHandler, NotFoundError } from '../../lib/errors';
+import { canAccessDrain, drainAccessScope } from '../../lib/drain-access';
 import { writeAudit } from '../../lib/audit';
 import { generateDeviceApiKey } from '../../lib/crypto';
 import { idParamSchema } from '../../lib/validation';
@@ -63,11 +64,17 @@ router.get(
   asyncHandler(async (req, res) => {
     const query = listSchema.parse(req.query);
     const { page, pageSize, skip, take } = getPagination(query);
-    const where = {
-      ...(query.drainId ? { drainId: query.drainId } : {}),
-      ...(query.type ? { type: query.type } : {}),
-      ...(query.healthStatus ? { healthStatus: query.healthStatus } : {}),
-      ...(query.zone ? { drain: { zone: query.zone } } : {}),
+    const scope = await drainAccessScope(req.user!);
+    const where: Prisma.DeviceWhereInput = {
+      AND: [
+        ...(scope ? [{ drain: { is: scope } }] : []),
+        {
+          ...(query.drainId ? { drainId: query.drainId } : {}),
+          ...(query.type ? { type: query.type } : {}),
+          ...(query.healthStatus ? { healthStatus: query.healthStatus } : {}),
+          ...(query.zone ? { drain: { zone: query.zone } } : {}),
+        },
+      ],
     };
 
     const [devices, total] = await Promise.all([
@@ -154,6 +161,9 @@ router.get(
       },
     });
     if (!device) throw new NotFoundError('Device');
+    if (!(await canAccessDrain(req.user!, device.drainId))) {
+      throw new NotFoundError('Device');
+    }
     res.json({ data: device });
   }),
 );
@@ -167,9 +177,12 @@ router.patch(
 
     const existing = await prisma.device.findUnique({
       where: { id },
-      select: { id: true, healthStatus: true },
+      select: { id: true, drainId: true, healthStatus: true },
     });
     if (!existing) throw new NotFoundError('Device');
+    if (!(await canAccessDrain(req.user!, existing.drainId))) {
+      throw new NotFoundError('Device');
+    }
 
     const device = await prisma.device.update({
       where: { id },

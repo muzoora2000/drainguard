@@ -1,9 +1,10 @@
 import { Router } from 'express';
-import { DrainStatus } from '@prisma/client';
+import { DrainStatus, Prisma } from '@prisma/client';
 import { z } from 'zod';
 import { prisma } from '../../lib/prisma';
 import { asyncHandler, NotFoundError } from '../../lib/errors';
 import { writeAudit } from '../../lib/audit';
+import { andDrainScope, drainAccessScope } from '../../lib/drain-access';
 import { idParamSchema } from '../../lib/validation';
 import { getPagination, paginated, paginationSchema } from '../../lib/pagination';
 import { requireAuth } from '../../middleware/auth';
@@ -57,7 +58,8 @@ router.get(
   asyncHandler(async (req, res) => {
     const query = listSchema.parse(req.query);
     const { page, pageSize, skip, take } = getPagination(query);
-    const where = {
+    const scope = await drainAccessScope(req.user!);
+    const where: Prisma.DrainWhereInput = andDrainScope(scope, {
       ...(query.zone ? { zone: query.zone } : {}),
       ...(query.status ? { status: query.status } : {}),
       ...(query.q
@@ -69,7 +71,7 @@ router.get(
             ],
           }
         : {}),
-    };
+    });
 
     const [drains, total] = await Promise.all([
       prisma.drain.findMany({
@@ -143,8 +145,9 @@ router.get(
   '/:id',
   asyncHandler(async (req, res) => {
     const { id } = idParamSchema.parse(req.params);
-    const drain = await prisma.drain.findUnique({
-      where: { id },
+    const scope = await drainAccessScope(req.user!);
+    const drain = await prisma.drain.findFirst({
+      where: andDrainScope(scope, { id }),
       include: {
         thresholds: true,
         fallbackContact: {
@@ -259,8 +262,9 @@ router.get(
   '/:id/live',
   asyncHandler(async (req, res) => {
     const { id } = idParamSchema.parse(req.params);
-    const drain = await prisma.drain.findUnique({
-      where: { id },
+    const scope = await drainAccessScope(req.user!);
+    const drain = await prisma.drain.findFirst({
+      where: andDrainScope(scope, { id }),
       include: {
         devices: { select: publicDeviceSelect, orderBy: { type: 'asc' } },
         thresholds: true,

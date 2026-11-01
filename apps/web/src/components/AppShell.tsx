@@ -204,11 +204,11 @@ function NotificationsMenu() {
             )}
           </div>
           <Link
-            to="/alerts"
+            to={role === 'ENGINEER' ? '/engineering' : '/alerts'}
             onClick={() => setOpen(false)}
             className="block border-t border-slate-100 px-4 py-3 text-center text-sm font-semibold text-brand-700 hover:bg-brand-50"
           >
-            View alert queue
+            {role === 'ENGINEER' ? 'View engineering reviews' : 'View alert queue'}
           </Link>
         </div>
       ) : null}

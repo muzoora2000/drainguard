@@ -1,8 +1,9 @@
 import { Router } from 'express';
-import { AlertSeverity, AlertStatus, AlertType } from '@prisma/client';
+import { AlertSeverity, AlertStatus, AlertType, Prisma } from '@prisma/client';
 import { z } from 'zod';
 import { prisma } from '../../lib/prisma';
 import { asyncHandler, ConflictError, NotFoundError } from '../../lib/errors';
+import { canAccessDrain, drainAccessScope } from '../../lib/drain-access';
 import { idParamSchema, isoDateSchema, notesSchema } from '../../lib/validation';
 import { getPagination, paginated, paginationSchema } from '../../lib/pagination';
 import { requireAuth } from '../../middleware/auth';
@@ -29,21 +30,27 @@ router.get(
   asyncHandler(async (req, res) => {
     const query = listSchema.parse(req.query);
     const { page, pageSize, skip, take } = getPagination(query);
+    const scope = await drainAccessScope(req.user!);
 
-    const where = {
-      ...(query.status ? { status: query.status } : {}),
-      ...(query.severity ? { severity: query.severity } : {}),
-      ...(query.type ? { type: query.type } : {}),
-      ...(query.drainId ? { drainId: query.drainId } : {}),
-      ...(query.zone ? { drain: { zone: query.zone } } : {}),
-      ...(query.from || query.to
-        ? {
-            createdAt: {
-              ...(query.from ? { gte: query.from } : {}),
-              ...(query.to ? { lte: query.to } : {}),
-            },
-          }
-        : {}),
+    const where: Prisma.AlertWhereInput = {
+      AND: [
+        ...(scope ? [{ drain: { is: scope } }] : []),
+        {
+          ...(query.status ? { status: query.status } : {}),
+          ...(query.severity ? { severity: query.severity } : {}),
+          ...(query.type ? { type: query.type } : {}),
+          ...(query.drainId ? { drainId: query.drainId } : {}),
+          ...(query.zone ? { drain: { zone: query.zone } } : {}),
+          ...(query.from || query.to
+            ? {
+                createdAt: {
+                  ...(query.from ? { gte: query.from } : {}),
+                  ...(query.to ? { lte: query.to } : {}),
+                },
+              }
+            : {}),
+        },
+      ],
     };
 
     const [alerts, total] = await Promise.all([
@@ -94,6 +101,9 @@ router.get(
       },
     });
     if (!alert) throw new NotFoundError('Alert');
+    if (!(await canAccessDrain(req.user!, alert.drainId))) {
+      throw new NotFoundError('Alert');
+    }
     res.json({ data: alert });
   }),
 );
@@ -107,6 +117,9 @@ router.post(
       select: { id: true, status: true, drainId: true, type: true },
     });
     if (!existing) throw new NotFoundError('Alert');
+    if (!(await canAccessDrain(req.user!, existing.drainId))) {
+      throw new NotFoundError('Alert');
+    }
     if (existing.status !== 'ACTIVE') {
       throw new ConflictError(`Only ACTIVE alerts can be acknowledged (current: ${existing.status})`);
     }
@@ -159,6 +172,9 @@ router.post(
       select: { id: true, status: true, drainId: true, type: true },
     });
     if (!existing) throw new NotFoundError('Alert');
+    if (!(await canAccessDrain(req.user!, existing.drainId))) {
+      throw new NotFoundError('Alert');
+    }
     if (existing.status === 'RESOLVED') {
       throw new ConflictError('Alert is already resolved');
     }

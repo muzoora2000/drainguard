@@ -331,11 +331,13 @@ interface RecordFormProps {
   open: boolean;
   onClose: () => void;
   taskId: string;
+  variant: 'maintenance' | 'engineering';
   onSaved: () => void;
 }
 
-function RecordFormModal({ open, onClose, taskId, onSaved }: RecordFormProps) {
+function RecordFormModal({ open, onClose, taskId, variant, onSaved }: RecordFormProps) {
   const { toast } = useToast();
+  const isEngineering = variant === 'engineering';
   const [notes, setNotes] = useState('');
   const [actionsTaken, setActionsTaken] = useState('');
   const [completedAt, setCompletedAt] = useState('');
@@ -357,7 +359,12 @@ function RecordFormModal({ open, onClose, taskId, onSaved }: RecordFormProps) {
         completedAt: completedAt ? new Date(completedAt).toISOString() : undefined,
       }),
     onSuccess: () => {
-      toast('Completion record saved and task marked done.', 'success');
+      toast(
+        isEngineering
+          ? 'Engineering findings saved and investigation marked done.'
+          : 'Completion record saved and task marked done.',
+        'success',
+      );
       onSaved();
       onClose();
     },
@@ -368,7 +375,11 @@ function RecordFormModal({ open, onClose, taskId, onSaved }: RecordFormProps) {
     event.preventDefault();
     setFormError(null);
     if (!notes.trim()) {
-      setFormError('Record what was checked or done before completing the task.');
+      setFormError(
+        isEngineering
+          ? 'Record the engineering findings before completing the investigation.'
+          : 'Record what was checked or done before completing the task.',
+      );
       return;
     }
     mutation.mutate();
@@ -378,8 +389,12 @@ function RecordFormModal({ open, onClose, taskId, onSaved }: RecordFormProps) {
     <Modal
       open={open}
       onClose={onClose}
-      title="Complete maintenance task"
-      description="A completion record becomes the maintenance history for this drain."
+      title={isEngineering ? 'Record engineering findings' : 'Complete maintenance task'}
+      description={
+        isEngineering
+          ? 'Findings become the engineering history for this drain and complete the investigation.'
+          : 'A completion record becomes the maintenance history for this drain.'
+      }
       size="md"
       footer={
         <>
@@ -387,14 +402,22 @@ function RecordFormModal({ open, onClose, taskId, onSaved }: RecordFormProps) {
             Cancel
           </Button>
           <Button type="submit" form="record-form" loading={mutation.isPending}>
-            Save record and complete
+            {isEngineering ? 'Save findings and complete' : 'Save record and complete'}
           </Button>
         </>
       }
     >
       <form id="record-form" className="space-y-4" onSubmit={submit}>
         {formError ? <FormError>{formError}</FormError> : null}
-        <Field label="Completion notes" htmlFor="record-notes" hint="State what was observed and the final condition.">
+        <Field
+          label={isEngineering ? 'Findings' : 'Completion notes'}
+          htmlFor="record-notes"
+          hint={
+            isEngineering
+              ? 'Record the observed condition, likely cause and recommended follow-up.'
+              : 'State what was observed and the final condition.'
+          }
+        >
           <textarea
             id="record-notes"
             className="field-textarea"
@@ -404,7 +427,15 @@ function RecordFormModal({ open, onClose, taskId, onSaved }: RecordFormProps) {
             required
           />
         </Field>
-        <Field label="Actions taken" htmlFor="record-actions" hint="Optional: cleared litter, removed debris, replaced sensor, referred to engineering.">
+        <Field
+          label={isEngineering ? 'Recommendations / actions' : 'Actions taken'}
+          htmlFor="record-actions"
+          hint={
+            isEngineering
+              ? 'Optional: mitigation, design change, further inspection or referral.'
+              : 'Optional: cleared litter, removed debris, replaced sensor, referred to engineering.'
+          }
+        >
           <textarea
             id="record-actions"
             className="field-textarea"
@@ -413,7 +444,7 @@ function RecordFormModal({ open, onClose, taskId, onSaved }: RecordFormProps) {
             maxLength={5000}
           />
         </Field>
-        <Field label="Completed at" htmlFor="record-completed">
+        <Field label={isEngineering ? 'Investigation completed at' : 'Completed at'} htmlFor="record-completed">
           <input
             id="record-completed"
             type="datetime-local"
@@ -437,8 +468,8 @@ export function TasksPage() {
   const [cancelOpen, setCancelOpen] = useState(false);
 
   const role = session?.user.role ?? 'TECHNICIAN';
+  const isEngineer = role === 'ENGINEER';
   const canManage = role === 'ADMIN' || role === 'SUPERVISOR';
-  const canWork = role !== 'ENGINEER';
 
   const status = (searchParams.get('status') ?? '') as '' | TaskStatus;
   const priority = (searchParams.get('priority') ?? '') as '' | TaskPriority;
@@ -496,12 +527,12 @@ export function TasksPage() {
   };
 
   const tasksQuery = useQuery({
-    queryKey: ['tasks', 'list', status, priority, type, mine, overdue, drainId, page],
+    queryKey: ['tasks', 'list', role, status, priority, type, mine, overdue, drainId, page],
     queryFn: () =>
       api.get<Paginated<MaintenanceTask>>('/api/tasks', {
         status: status || undefined,
         priority: priority || undefined,
-        type: type || undefined,
+        type: isEngineer ? 'ENGINEERING_INVESTIGATION' : type || undefined,
         mine: mine ? 'true' : undefined,
         overdue: overdue ? 'true' : undefined,
         drainId: drainId || undefined,
@@ -556,6 +587,9 @@ export function TasksPage() {
   });
 
   const task = taskQuery.data?.data;
+  const canWork = !isEngineer || task?.type === 'ENGINEERING_INVESTIGATION';
+  const canAddFindings =
+    Boolean(task) && canWork && task?.status !== 'DONE' && task?.status !== 'CANCELLED';
   const openRecords =
     task?.records?.filter((record) => record.notes || record.actionsTaken).slice() ?? [];
   const hasFilters = Boolean(status || priority || type || mine || overdue || drainId);
@@ -578,9 +612,13 @@ export function TasksPage() {
   return (
     <div className="space-y-6">
       <PageHeader
-        title="Maintenance tasks"
-        description="Turn alert signals into scheduled work. Technicians can claim tasks, update progress and record the outcome against the drain."
-        eyebrow="Field delivery"
+        title={isEngineer ? 'Engineering investigations' : 'Maintenance tasks'}
+        description={
+          isEngineer
+            ? 'Review engineering investigations, record findings and complete the engineering response for each drain.'
+            : 'Turn alert signals into scheduled work. Technicians can claim tasks, update progress and record the outcome against the drain.'
+        }
+        eyebrow={isEngineer ? 'Engineering review' : 'Field delivery'}
         actions={
           <>
             <Button variant="secondary" size="sm" icon={RefreshCw} onClick={() => void tasksQuery.refetch()}>
@@ -616,19 +654,25 @@ export function TasksPage() {
         </div>
 
         <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
-          <select
-            className="field-select"
-            value={type}
-            onChange={(event) => updateParam('type', event.target.value)}
-            aria-label="Filter by task type"
-          >
-            <option value="">All task types</option>
-            {taskTypes.map((item) => (
-              <option key={item} value={item}>
-                {enumLabel(item)}
-              </option>
-            ))}
-          </select>
+          {isEngineer ? (
+            <div className="flex items-center rounded-xl border border-violet-200 bg-violet-50 px-3.5 py-2.5 text-sm font-medium text-violet-800">
+              Engineering investigations only
+            </div>
+          ) : (
+            <select
+              className="field-select"
+              value={type}
+              onChange={(event) => updateParam('type', event.target.value)}
+              aria-label="Filter by task type"
+            >
+              <option value="">All task types</option>
+              {taskTypes.map((item) => (
+                <option key={item} value={item}>
+                  {enumLabel(item)}
+                </option>
+              ))}
+            </select>
+          )}
           <select
             className="field-select"
             value={priority}
@@ -676,10 +720,13 @@ export function TasksPage() {
       <Card padded={false}>
         <div className="flex flex-wrap items-center justify-between gap-3 border-b border-slate-100 px-5 py-4">
           <div>
-            <h2 className="text-base font-semibold text-slate-900">Task queue</h2>
+            <h2 className="text-base font-semibold text-slate-900">
+              {isEngineer ? 'Investigation queue' : 'Task queue'}
+            </h2>
             <p className="mt-0.5 text-xs text-slate-500">
-              {formatNumber(tasksQuery.data?.meta.total ?? 0)} matching tasks
-              {role === 'TECHNICIAN' ? ' · assigned to you or unclaimed' : ''}
+              {formatNumber(tasksQuery.data?.meta.total ?? 0)} matching{' '}
+              {isEngineer ? 'investigations' : 'tasks'}
+              {role === 'TECHNICIAN' ? ' A� assigned to you or unclaimed' : ''}
             </p>
           </div>
           <Badge tone="slate" dot>
@@ -792,7 +839,7 @@ export function TasksPage() {
                   Edit
                 </Button>
               ) : null}
-              {task.status === 'SCHEDULED' ? (
+              {!isEngineer && task.status === 'SCHEDULED' ? (
                 <Button
                   variant="secondary"
                   icon={UserPlus}
@@ -807,7 +854,12 @@ export function TasksPage() {
                   Start task
                 </Button>
               ) : null}
-              {task.status === 'IN_PROGRESS' ? (
+              {isEngineer && canAddFindings ? (
+                <Button icon={ClipboardList} onClick={() => setRecordOpen(true)}>
+                  Record findings
+                </Button>
+              ) : null}
+              {!isEngineer && task.status === 'IN_PROGRESS' ? (
                 <Button icon={CheckCircle2} onClick={() => setRecordOpen(true)}>
                   Complete
                 </Button>
@@ -901,10 +953,12 @@ export function TasksPage() {
 
             <div>
               <div className="mb-2 flex items-center justify-between">
-                <h3 className="text-xs font-semibold uppercase tracking-wide text-slate-400">Maintenance records</h3>
-                {canWork && task.status === 'IN_PROGRESS' ? (
+                <h3 className="text-xs font-semibold uppercase tracking-wide text-slate-400">
+                  {isEngineer ? 'Engineering findings' : 'Maintenance records'}
+                </h3>
+                {canAddFindings && (isEngineer || task.status === 'IN_PROGRESS') ? (
                   <button type="button" onClick={() => setRecordOpen(true)} className="text-xs font-semibold text-brand-700 hover:underline">
-                    Add record
+                    {isEngineer ? 'Add findings' : 'Add record'}
                   </button>
                 ) : null}
               </div>
@@ -929,7 +983,9 @@ export function TasksPage() {
               ) : (
                 <div className="flex items-center gap-2 rounded-xl bg-slate-50 p-3 text-sm text-slate-500">
                   <ClipboardList className="h-4 w-4" />
-                  No maintenance record has been added.
+                  {isEngineer
+                    ? 'No engineering findings have been recorded.'
+                    : 'No maintenance record has been added.'}
                 </div>
               )}
             </div>
@@ -943,7 +999,7 @@ export function TasksPage() {
       </SidePanel>
 
       <TaskFormModal
-        open={createOpen}
+        open={createOpen && canManage}
         onClose={closeCreate}
         defaultDrainId={createDrainId}
         defaultAlertId={createAlertId}
@@ -967,6 +1023,7 @@ export function TasksPage() {
         open={recordOpen}
         onClose={() => setRecordOpen(false)}
         taskId={taskId}
+        variant={isEngineer ? 'engineering' : 'maintenance'}
         onSaved={invalidateTasks}
       />
 

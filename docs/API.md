@@ -65,6 +65,12 @@ Authorization: Device dg_...
 - `ADMIN`: full access, user/device/drain configuration, audit logs, CSV reports.
 - `SUPERVISOR`: operations oversight, alert acknowledgement/resolution, task assignment, CSV reports.
 - `TECHNICIAN`: assigned work, alert acknowledgement/resolution, device health updates, maintenance records.
+- `ENGINEER`: engineering review only. Engineers see `ENGINEERING_INVESTIGATION` tasks and can add findings; they cannot open the alert queue, task-edit endpoints or reading history.
+
+Drain, alert, reading and device queries are scoped by role. Technicians only see drains
+in their assigned zones, directly assigned drains, or drains linked to a task assigned to
+them. Engineers only see drains that have an engineering investigation. Admin and
+supervisor queries are unrestricted.
 
 ### Pagination and filters
 
@@ -304,10 +310,10 @@ Sources: `SENSOR`, `MANUAL`, `WEATHER_API`. `(zone, externalId)` is unique for n
 
 | Method | Path | Auth | Description |
 | --- | --- | --- | --- |
-| `GET` | `/api/alerts` | Any user | List; filters `status`, `severity`, `type`, `drainId`, `zone`, `from`, `to` |
-| `GET` | `/api/alerts/:id` | Any user | Detail with notifications and tasks |
-| `POST` | `/api/alerts/:id/acknowledge` | Any user | Acknowledge an `ACTIVE` alert |
-| `POST` | `/api/alerts/:id/resolve` | Any user | Resolve with a note |
+| `GET` | `/api/alerts` | Admin/supervisor/technician | List; filters `status`, `severity`, `type`, `drainId`, `zone`, `from`, `to` |
+| `GET` | `/api/alerts/:id` | Admin/supervisor/technician | Detail with notifications and tasks |
+| `POST` | `/api/alerts/:id/acknowledge` | Admin/supervisor/technician | Acknowledge an `ACTIVE` alert |
+| `POST` | `/api/alerts/:id/resolve` | Admin/supervisor/technician | Resolve with a note |
 
 Alert types: `BASKET_NEARLY_FULL`, `HIGH_WATER`, `POSSIBLE_BLOCKAGE`, `SYSTEM_HEALTH`, `ENGINEERING_REVIEW`.
 Severities: `INFO`, `WARNING`, `CRITICAL`. Statuses: `ACTIVE`, `ACKNOWLEDGED`, `RESOLVED`.
@@ -324,14 +330,16 @@ Only `ACTIVE` alerts can be acknowledged. Acknowledged alerts stop escalation. R
 
 | Method | Path | Auth | Description |
 | --- | --- | --- | --- |
-| `GET` | `/api/tasks` | Any user | List; filters `status`, `priority`, `type`, `drainId`, `assignedToId`, `overdue`, `mine` |
+| `GET` | `/api/tasks` | Authenticated | List; filters `status`, `priority`, `type`, `drainId`, `assignedToId`, `overdue`, `mine` |
 | `POST` | `/api/tasks` | Admin/supervisor | Create task |
-| `GET` | `/api/tasks/:id` | Any user | Detail with maintenance records |
-| `PATCH` | `/api/tasks/:id` | Any user | Update/claim task |
+| `GET` | `/api/tasks/:id` | Authenticated | Detail with maintenance records |
+| `PATCH` | `/api/tasks/:id` | Admin/supervisor/technician | Update/claim task |
 | `DELETE` | `/api/tasks/:id` | Admin/supervisor | Cancel task |
-| `POST` | `/api/tasks/:id/records` | Any user | Add completion record and mark task `DONE` |
+| `POST` | `/api/tasks/:id/records` | Admin/supervisor/technician/engineer | Add completion record or engineering findings and mark task `DONE` |
 
-Technicians see tasks assigned to them plus unassigned tasks. They may claim an unassigned task by setting status to `IN_PROGRESS` or adding a record. Supervisors/admins can assign any active user.
+Technicians see tasks assigned to them plus unclaimed tasks on drains in their assigned zones or assigned directly to them. They may claim an accessible unclaimed task by setting status to `IN_PROGRESS` or adding a record. They cannot list another user's tasks. Supervisors/admins can assign any active user.
+
+Engineers only see tasks whose type is `ENGINEERING_INVESTIGATION`, regardless of the requested `type` filter. They cannot patch tasks, but may add findings through `POST /api/tasks/:id/records` for an open engineering investigation; this marks the investigation `DONE`.
 
 Statuses: `SCHEDULED`, `IN_PROGRESS`, `DONE`, `CANCELLED`. Priorities: `LOW`, `MEDIUM`, `HIGH`, `URGENT`.
 Task types: `LITTER_REMOVAL`, `BLOCKAGE_INSPECTION`, `ENGINEERING_INVESTIGATION`, `DEVICE_REPAIR`.

@@ -1,8 +1,9 @@
 import { Router } from 'express';
-import { DeviceType, ReadingQuality } from '@prisma/client';
+import { DeviceType, Prisma, ReadingQuality } from '@prisma/client';
 import { z } from 'zod';
 import { prisma } from '../../lib/prisma';
 import { asyncHandler, BadRequestError, NotFoundError } from '../../lib/errors';
+import { drainAccessScope } from '../../lib/drain-access';
 import { isoDateSchema } from '../../lib/validation';
 import { getPagination, paginated, paginationSchema } from '../../lib/pagination';
 import { requireAuth } from '../../middleware/auth';
@@ -33,12 +34,18 @@ router.get(
       throw new BadRequestError('from must be before to');
     }
 
-    const where = {
-      ...(query.drainId ? { drainId: query.drainId } : {}),
-      ...(query.deviceId ? { deviceId: query.deviceId } : {}),
-      ...(query.type ? { type: query.type } : {}),
-      ...(query.quality ? { quality: query.quality } : {}),
-      recordedAt: { gte: from, lte: to },
+    const scope = await drainAccessScope(req.user!);
+    const where: Prisma.SensorReadingWhereInput = {
+      AND: [
+        ...(scope ? [{ drain: { is: scope } }] : []),
+        {
+          ...(query.drainId ? { drainId: query.drainId } : {}),
+          ...(query.deviceId ? { deviceId: query.deviceId } : {}),
+          ...(query.type ? { type: query.type } : {}),
+          ...(query.quality ? { quality: query.quality } : {}),
+          recordedAt: { gte: from, lte: to },
+        },
+      ],
     };
 
     const [readings, total] = await Promise.all([
@@ -69,10 +76,16 @@ router.get(
       throw new BadRequestError('drainId or deviceId is required');
     }
 
+    const scope = await drainAccessScope(req.user!);
     const devices = await prisma.device.findMany({
       where: {
-        ...(query.deviceId ? { id: query.deviceId } : {}),
-        ...(query.drainId ? { drainId: query.drainId } : {}),
+        AND: [
+          ...(scope ? [{ drain: { is: scope } }] : []),
+          {
+            ...(query.deviceId ? { id: query.deviceId } : {}),
+            ...(query.drainId ? { drainId: query.drainId } : {}),
+          },
+        ],
       },
       select: { id: true, drainId: true, name: true, type: true, healthStatus: true },
       orderBy: { type: 'asc' },

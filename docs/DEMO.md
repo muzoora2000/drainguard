@@ -99,9 +99,12 @@ original values when it finishes.
 7. Run scenario 5 and show the system-health alert and device-repair task. Restore the
    device to `HEALTHY` afterwards.
 8. Run scenario 6 and show the engineering-review alert and investigation task.
-9. Open **Reports** to show alert trends, response times, repeat problem drains and CSV
-   downloads.
-10. Use the sun/moon control in the header to demonstrate the light and dark themes.
+9. As an administrator, create an `ENGINEER` user from **Administration → Users**, then
+   sign in as that engineer. Open **Engineering**, open the investigation and record
+   findings. Point out that the engineer has no alert queue or task-edit controls.
+10. Open **Reports** to show alert trends, response times, repeat problem drains and CSV
+    downloads.
+11. Use the sun/moon control in the header to demonstrate the light and dark themes.
 
 ## Clean-up between rehearsals
 

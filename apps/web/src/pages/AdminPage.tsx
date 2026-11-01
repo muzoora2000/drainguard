@@ -69,6 +69,8 @@ import {
 
 type AdminTab = 'users' | 'drains' | 'devices' | 'rainfall';
 
+const roleOptions: Role[] = ['ADMIN', 'SUPERVISOR', 'TECHNICIAN', 'ENGINEER'];
+
 export function AdminPage() {
   const [tab, setTab] = useState<AdminTab>('users');
 
@@ -317,7 +319,7 @@ function UsersAdmin() {
               }}
             >
               <option value="">All roles</option>
-              {(['ADMIN', 'SUPERVISOR', 'TECHNICIAN', 'ENGINEER'] as Role[]).map((item) => (
+              {roleOptions.map((item) => (
                 <option key={item} value={item}>
                   {enumLabel(item)}
                 </option>
@@ -508,14 +510,18 @@ function UsersAdmin() {
                 autoComplete="email"
               />
             </Field>
-            <Field label="Role" htmlFor="user-form-role">
+            <Field
+              label="Role"
+              htmlFor="user-form-role"
+              hint="Administrator, supervisor, technician or engineer."
+            >
               <select
                 id="user-form-role"
                 className="field-select"
                 value={form.role}
                 onChange={(event) => setForm({ ...form, role: event.target.value as Role })}
               >
-                {(['ADMIN', 'SUPERVISOR', 'TECHNICIAN', 'ENGINEER'] as Role[]).map((item) => (
+                {roleOptions.map((item) => (
                   <option key={item} value={item}>
                     {enumLabel(item)}
                   </option>

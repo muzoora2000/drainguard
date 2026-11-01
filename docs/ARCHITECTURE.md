@@ -484,9 +484,9 @@ cooldown creates a new alert row.
 |---|:---:|:---:|:---:|:---:|:---:|
 | Manage users, contacts, assignments | ✅ | — | — | — | — |
 | Manage drains, devices, thresholds | ✅ | — | — | — | — |
-| View dashboard / drains / readings | ✅ | ✅ | assigned drains | ✅ | — |
-| View all alerts / acknowledge / resolve | ✅ | ✅ | assigned drains | engineering alerts | — |
-| View reports | ✅ | ✅ | — | ✅ | — |
+| View dashboard / drains / readings | ✅ | ✅ | assigned drains | engineering drains | — |
+| View all alerts / acknowledge / resolve | ✅ | ✅ | assigned drains | — | — |
+| View reports | ✅ | ✅ | ✅ | ✅ | — |
 | Assign / prioritise / close tasks | ✅ | ✅ | own tasks (status + records) | — | — |
 | Log maintenance records | ✅ | ✅ | ✅ | ✅ (findings) | — |
 | View engineering investigations | ✅ | ✅ | — | ✅ | — |

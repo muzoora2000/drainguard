@@ -124,6 +124,21 @@ Open `http://localhost:5173`. The API listens on `http://localhost:4000`; check
 
 All three are seeded with the current `SEED_PASSWORD`. No engineer account is seeded.
 
+### Roles
+
+| Role | What they use |
+|---|---|
+| Administrator | Full access, including users, drains, devices, thresholds and audit logs |
+| Supervisor | All drains, alerts, tasks and reports; can assign tasks and resolve alerts |
+| Technician | Assigned drains and zones, alert response, and assigned or unclaimed maintenance tasks |
+| Engineer | Engineering review: drains with engineering investigations, engineering tasks only, and findings recorded against the investigation |
+
+Only these four roles are available in **Administration → Users → New user**. To exercise the
+engineer workflow, create an account with the `ENGINEER` role, sign in, open **Engineering**,
+open an investigation and choose **Record findings**. The backend also enforces the role, so
+an engineer cannot open the alert queue, view non-engineering tasks, edit a task or read
+reading history directly.
+
 ## Common commands
 
 | Command | Purpose |
