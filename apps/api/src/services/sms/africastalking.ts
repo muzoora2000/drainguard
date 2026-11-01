@@ -34,9 +34,13 @@ export class AfricaStalkingSmsProvider implements SmsProvider {
       body.set('from', env.AFRICASTALKING_SENDER_ID);
     }
 
+    const baseUrl = env.AFRICASTALKING_SANDBOX
+      ? 'https://api.sandbox.africastalking.com'
+      : 'https://api.africastalking.com';
+
     let response: Response;
     try {
-      response = await fetch('https://api.africastalking.com/version1/messaging', {
+      response = await fetch(`${baseUrl}/version1/messaging`, {
         method: 'POST',
         headers: {
           apiKey: env.AFRICASTALKING_API_KEY,

@@ -6,6 +6,11 @@ const booleanString = z
   .default('true')
   .transform((value) => value === 'true');
 
+const falseBooleanString = z
+  .enum(['true', 'false'])
+  .default('false')
+  .transform((value) => value === 'true');
+
 const intFromEnv = (fallback: number, min: number, max: number) =>
   z.coerce.number().int().min(min).max(max).default(fallback);
 
@@ -37,6 +42,7 @@ const envSchema = z
     AFRICASTALKING_USERNAME: z.string().optional(),
     AFRICASTALKING_API_KEY: z.string().optional(),
     AFRICASTALKING_SENDER_ID: z.string().optional(),
+    AFRICASTALKING_SANDBOX: falseBooleanString,
     TWILIO_ACCOUNT_SID: z.string().optional(),
     TWILIO_AUTH_TOKEN: z.string().optional(),
     TWILIO_FROM_NUMBER: z.string().optional(),

@@ -250,6 +250,12 @@ Add the provider-specific SMS variables from
 [apps/api/.env.example](apps/api/.env.example) when not using `mock`. Do not set `PORT`;
 Render supplies it.
 
+For Uganda, use `SMS_PROVIDER=africastalking` with live `AFRICASTALKING_USERNAME`,
+`AFRICASTALKING_API_KEY` and an `AFRICASTALKING_SENDER_ID` approved for Uganda. Keep
+`AFRICASTALKING_SANDBOX=false` for production delivery. Africa's Talking's default test
+sender is Kenya-only, so an approved sender ID is required for Ugandan MTN/Airtel
+numbers. Add a `+256...` phone to assigned users and/or set `SMS_FALLBACK_PHONE`.
+
 Run `npm run db:seed` once from a Render shell or locally with the production
 `DATABASE_URL`, `DIRECT_URL` and `SEED_PASSWORD`.
 

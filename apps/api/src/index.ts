@@ -10,6 +10,20 @@ const server = app.listen(env.PORT, () => {
   logger.info({ port: env.PORT, environment: env.NODE_ENV }, 'DrainGuard API listening');
 });
 
+if (env.NODE_ENV === 'production' && env.SMS_PROVIDER === 'mock') {
+  logger.warn('SMS_PROVIDER=mock in production: alerts will not send real SMS');
+}
+if (
+  env.NODE_ENV === 'production' &&
+  env.SMS_PROVIDER === 'africastalking' &&
+  !env.AFRICASTALKING_SENDER_ID
+) {
+  logger.warn('AFRICASTALKING_SENDER_ID is not set: Uganda alerts require an approved sender ID');
+}
+if (env.NODE_ENV === 'production' && env.AFRICASTALKING_SANDBOX) {
+  logger.warn('AFRICASTALKING_SANDBOX is enabled in production: messages use the sandbox endpoint');
+}
+
 startScheduler();
 
 let shuttingDown = false;

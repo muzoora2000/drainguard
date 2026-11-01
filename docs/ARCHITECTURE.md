@@ -560,7 +560,8 @@ interface SmsProvider {
 ```
 
 - `mock`: logs the message and returns a synthetic id. Used in development/demo.
-- `africastalking`: `POST https://api.africastalking.com/version1/messaging`, `apiKey`
+- `africastalking`: `POST https://api.africastalking.com/version1/messaging` (or
+  `api.sandbox.africastalking.com` when `AFRICASTALKING_SANDBOX=true`), `apiKey`
   header, form-encoded `username`, `to`, `message`, optional `from`.
 - `twilio`: `POST https://api.twilio.com/2010-04-01/Accounts/{SID}/Messages.json`,
   Basic auth, form-encoded `To`, `From`, `Body`.

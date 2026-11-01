@@ -399,6 +399,12 @@ Faulty/offline devices and non-`OK` readings are excluded from measurements. Ale
 
 `SMS_PROVIDER` selects `mock` (default), `africastalking`, or `twilio`. Assigned users with `smsOptIn` receive primary SMS. If no assigned SMS contact exists, the drain's fallback contact, global fallback contacts, then `SMS_FALLBACK_PHONE` are used. Failed sends retry with exponential backoff (`SMS_RETRY_BASE_MINUTES`, `SMS_MAX_ATTEMPTS`) before falling back to escalation contacts. In-app notifications are created for assigned users with `inAppOptIn`.
 
+Africa's Talking supports Ugandan numbers. Use live `AFRICASTALKING_USERNAME` and
+`AFRICASTALKING_API_KEY`, set `AFRICASTALKING_SENDER_ID` to a sender approved for Uganda,
+and keep `AFRICASTALKING_SANDBOX=false`. AT's default test sender is Kenya-only, so an
+approved sender ID is required for live MTN/Airtel Uganda delivery. `AFRICASTALKING_SANDBOX=true`
+switches to `api.sandbox.africastalking.com` for development only.
+
 ## Environment
 
 See `apps/api/.env.example`. Required at startup: `DATABASE_URL`, `DIRECT_URL`, `JWT_ACCESS_SECRET` (32+ chars), `JWT_REFRESH_SECRET` (32+ chars). Production requires provider credentials when `SMS_PROVIDER` is not `mock`.

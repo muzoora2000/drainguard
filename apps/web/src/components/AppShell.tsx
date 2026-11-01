@@ -113,7 +113,8 @@ function NotificationsMenu() {
   const query = useQuery({
     queryKey: ['notifications', 'header'],
     queryFn: () => api.get<Paginated<NotificationItem> & { recent: number }>('/api/notifications', { pageSize: 8 }),
-    enabled: open,
+    enabled: Boolean(session),
+    refetchInterval: open ? 30_000 : 60_000,
   });
 
   useEffect(() => {
